@@ -1,0 +1,18 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        google()
+        mavenCentral()
+    }
+}
+dependencyResolutionManagement {
+    //repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+rootProject.name = "PerformanceComp"
+
+include ':app', ':sc-hsm-android-library'
+project(':sc-hsm-android-library').projectDir = new File(settingsDir, "../sc-hsm-android-library/sc-hsm-android-library")
