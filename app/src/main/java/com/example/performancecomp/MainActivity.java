@@ -14,6 +14,7 @@ import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -82,6 +83,8 @@ public class MainActivity extends AppCompatActivity {
         Button hsmButton = (Button) findViewById(R.id.button1);
         hsmButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+                Log.i(TAG, "Starting SmartCard-HSM Benchmark...");
+                Toast.makeText(getApplicationContext(), "Starting SmartCard-HSM Benchmark...", Toast.LENGTH_LONG);
                 Debug.startMethodTracing("smartCardHSM.trace");
                 hsmTest();
                 Debug.stopMethodTracing();
@@ -91,6 +94,8 @@ public class MainActivity extends AppCompatActivity {
         Button keyStoreButton = (Button) findViewById(R.id.button2);
         keyStoreButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+                Log.i(TAG, "Starting AndroidKeyStore Benchmark...");
+                Toast.makeText(getApplicationContext(), "Starting AndroidKeyStore Benchmark...", Toast.LENGTH_LONG);
                 Debug.startMethodTracing("keyStore.trace");
                 keyStoreTest();
                 Debug.stopMethodTracing();
@@ -108,12 +113,14 @@ public class MainActivity extends AppCompatActivity {
 
             /* Test RSA */
             for(int input = 0; input < inputs.size(); input++) {
+                Log.i(TAG, "Starting with " + 16*Math.pow(2, input) +  " bytes input...");
                 for(int idx = 0; idx < 10; idx++) {
                     hsmOperationRSA(smartCardService, (byte[]) inputs.get(input));
                 }
             }
             /* Test AES */
             for(int input = 0; input < inputs.size(); input++) {
+                Log.i(TAG, "Starting with " + 16*Math.pow(2, input) +  " bytes input...");
                 for(int idx = 0; idx < 10; idx++) {
                     hsmOperationAES(smartCardService, (byte[]) inputs.get(input));
                 }
@@ -141,12 +148,14 @@ public class MainActivity extends AppCompatActivity {
             KeyStore.Entry keyEntryAES = keyStore.getEntry("aes_key", null);
             /* Test RSA */
             for(int input = 0; input < inputs.size(); input++) {
+                Log.i(TAG, "Starting with " + 16*Math.pow(2, input) +  " bytes input...");
                 for(int idx = 0; idx < 10; idx++) {
                     keyStoreOperationRSA(keyEntryRSA, (byte[]) inputs.get(input));
                 }
             }
             /* Test AES */
             for(int input = 0; input < inputs.size(); input++) {
+                Log.i(TAG, "Starting with " + 16*Math.pow(2, input) +  " bytes input...");
                 for(int idx = 0; idx < 10; idx++) {
                     keyStoreOperationAES(keyEntryAES, (byte[]) inputs.get(input));
                 }
@@ -187,22 +196,24 @@ public class MainActivity extends AppCompatActivity {
             final PrivateKey privateKey = getPrivateKey("private_key.der");
             /* add private key with cert to AndroidKeyStore Entries */
             addRSAKeyToAndroidKeyStore("rsa_key", cert, privateKey);
+            Log.i(TAG, "RSA keys imported...");
         } catch (final IOException | CertificateException | NoSuchAlgorithmException | InvalidKeySpecException | KeyStoreException e) {
             Log.e(TAG, Log.getStackTraceString(e));
         }
         /* Add AES key */
-        final byte[] importKeyBytes = Base64.decode("ODX7mDoxHXVjVdD6pmXGadUWIDNOXX6rUNMA4Ofp3L8=", Base64.DEFAULT);
-        final SecretKey importKey = new SecretKeySpec(importKeyBytes, 0, importKeyBytes.length, "AES");
+        byte[] importKeyBytes = Base64.decode("ODX7mDoxHXVjVdD6pmXGadUWIDNOXX6rUNMA4Ofp3L8=", Base64.DEFAULT);
+        SecretKey importKey = new SecretKeySpec(importKeyBytes, 0, importKeyBytes.length, "AES");
+        Log.i(TAG, "AES keys imported...");
         try {
             addAESKeyToAndroidKeyStore("aes_key", importKey);
-        } catch (final KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
+        } catch (KeyStoreException | CertificateException | IOException | NoSuchAlgorithmException e) {
             Log.e(TAG, Log.getStackTraceString(e));
         }
     }
     /**
      * Function to import AES keys.
      */
-    private void addAESKeyToAndroidKeyStore(final String alias, final SecretKey importKey) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
+    private void addAESKeyToAndroidKeyStore(String alias, SecretKey importKey) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
         final KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
         keyStore.load(null);
         keyStore.setEntry(
