@@ -16,9 +16,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -76,29 +78,33 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         /* Add different inputs to inputs list */
-        inputs.add(input16); inputs.add(input32); inputs.add(input64); inputs.add(input128); inputs.add(input256);
+        inputs.add(input16);
         /* Import AES and RSA key to Android KeyStores */
         importAndroidKeyStoreKeys();
+        startCollecting();
 
         Button hsmButton = (Button) findViewById(R.id.button1);
         hsmButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Log.i(TAG, "Starting SmartCard-HSM Benchmark...");
-                Toast.makeText(getApplicationContext(), "Starting SmartCard-HSM Benchmark...", Toast.LENGTH_LONG);
-                Debug.startMethodTracing("smartCardHSM.trace");
+                /*Log.i(TAG, "getCpuUsageFromFreqBefore: " + CpuInfo.getCpuUsageFromFreq());
+                Log.i(TAG, "getCpuUsageSinceLastCallBefore: " + CpuInfo.getCpuUsageSinceLastCall());*/
                 hsmTest();
-                Debug.stopMethodTracing();
+                /*Log.i(TAG, "getCpuUsageFromFreqAfter: " + CpuInfo.getCpuUsageFromFreq());
+                Log.i(TAG, "getCpuUsageSinceLastCallAfter: " + CpuInfo.getCpuUsageSinceLastCall());*/
             }
         });
 
         Button keyStoreButton = (Button) findViewById(R.id.button2);
         keyStoreButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                Log.i(TAG, "Starting AndroidKeyStore Benchmark...");
-                Toast.makeText(getApplicationContext(), "Starting AndroidKeyStore Benchmark...", Toast.LENGTH_LONG);
-                Debug.startMethodTracing("keyStore.trace");
+                Log.v(TAG, "Starting AndroidKeyStore Benchmark...");
+                /*Log.i(TAG, "getCpuUsageFromFreqBefore: " + CpuInfo.getCpuUsageFromFreq());
+                Log.i(TAG, "getCpuUsageSinceLastCallBefore: " + CpuInfo.getCpuUsageSinceLastCall());*/
                 keyStoreTest();
-                Debug.stopMethodTracing();
+                Log.v(TAG, "Finished AndroidKeyStore Benchmark...");
+                /*Log.i(TAG, "getCpuUsageFromFreqAfter: " + CpuInfo.getCpuUsageFromFreq());
+                Log.i(TAG, "getCpuUsageSinceLastCallAfter: " + CpuInfo.getCpuUsageSinceLastCall());*/
             }
         });
     }
@@ -111,20 +117,26 @@ public class MainActivity extends AppCompatActivity {
             SmartCardHSMCardService smartCardService = getSmartCardHSMCardService();
             smartCardService.verifyPassword(null, 0, "123456".getBytes());
 
+            Debug.startMethodTracing("smartCardHSM.trace");
             /* Test RSA */
+            //Log.i(TAG, "[*] Starting with RSA tests...");
             for(int input = 0; input < inputs.size(); input++) {
-                Log.i(TAG, "Starting with " + 16*Math.pow(2, input) +  " bytes input...");
+                //Log.i(TAG, "[**] Starting with " + 16*Math.pow(2, input) +  " bytes input...");
                 for(int idx = 0; idx < 10; idx++) {
                     hsmOperationRSA(smartCardService, (byte[]) inputs.get(input));
                 }
+                //hsmOperationRSA(smartCardService, (byte[]) inputs.get(input));
             }
             /* Test AES */
+            //Log.i(TAG, "[*] Starting with AES tests...");
             for(int input = 0; input < inputs.size(); input++) {
-                Log.i(TAG, "Starting with " + 16*Math.pow(2, input) +  " bytes input...");
+                //Log.i(TAG, "[**] Starting with " + 16*Math.pow(2, input) +  " bytes input...");
                 for(int idx = 0; idx < 10; idx++) {
                     hsmOperationAES(smartCardService, (byte[]) inputs.get(input));
                 }
+                //hsmOperationAES(smartCardService, (byte[]) inputs.get(input));
             }
+            Debug.stopMethodTracing();
         } catch (OpenCardPropertyLoadingException | CardServiceException | CardTerminalException | ClassNotFoundException e) {
             Log.e(TAG, Log.getStackTraceString(e));
         } finally {
@@ -146,22 +158,29 @@ public class MainActivity extends AppCompatActivity {
             keyStore.load(null);
             KeyStore.Entry keyEntryRSA = keyStore.getEntry("rsa_key", null);
             KeyStore.Entry keyEntryAES = keyStore.getEntry("aes_key", null);
+
+            Debug.startMethodTracing("keyStore.trace");
             /* Test RSA */
+            //Log.i(TAG, "[*] Starting with RSA tests...");
             for(int input = 0; input < inputs.size(); input++) {
-                Log.i(TAG, "Starting with " + 16*Math.pow(2, input) +  " bytes input...");
+                //Log.i(TAG, "[**] Starting with " + 16*Math.pow(2, input) +  " bytes input...");
                 for(int idx = 0; idx < 10; idx++) {
                     keyStoreOperationRSA(keyEntryRSA, (byte[]) inputs.get(input));
                 }
+                //keyStoreOperationRSA(keyEntryRSA, (byte[]) inputs.get(input));
             }
             /* Test AES */
+            //Log.i(TAG, "[*] Starting with RSA tests...");
             for(int input = 0; input < inputs.size(); input++) {
-                Log.i(TAG, "Starting with " + 16*Math.pow(2, input) +  " bytes input...");
+                //Log.i(TAG, "[**] Starting with " + 16*Math.pow(2, input) +  " bytes input...");
                 for(int idx = 0; idx < 10; idx++) {
                     keyStoreOperationAES(keyEntryAES, (byte[]) inputs.get(input));
                 }
+                //keyStoreOperationAES(keyEntryAES, (byte[]) inputs.get(input));
             }
+            Debug.stopMethodTracing();
         } catch (NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException | UnrecoverableEntryException | CertificateException | KeyStoreException | IOException | NoSuchAlgorithmException | SignatureException | InvalidKeyException e) {
-            e.printStackTrace();
+            Log.i(TAG, Log.getStackTraceString(e));
         }
     }
 
@@ -320,5 +339,31 @@ public class MainActivity extends AppCompatActivity {
 
         Log.i(TAG, "Trying to create card service...");
         return (SmartCardHSMCardService) sc.getCardService(SmartCardHSMCardService.class, true);
+    }
+
+    private void startCollecting() {
+        Thread thread = new Thread() {
+            @Override
+            public void run() {
+                /*try {
+                    ProcessBuilder builder = new ProcessBuilder("top", "-q", "-oCMDLINE,%CPU", "-s2", "-b");
+                    Process process = builder.start();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        Log.d(TAG, "line: " + line);
+                    }
+                    reader.close();
+                    BufferedReader err_reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+                    while ((line = err_reader.readLine()) != null) {
+                        Log.e(TAG, "error: " + line);
+                    }
+                    process.waitFor();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }*/
+            }
+        };
+        thread.start();
     }
 }
