@@ -122,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
             //Log.i(TAG, "[*] Starting with RSA tests...");
             for(int input = 0; input < inputs.size(); input++) {
                 //Log.i(TAG, "[**] Starting with " + 16*Math.pow(2, input) +  " bytes input...");
-                for(int idx = 0; idx < 10; idx++) {
+                for(int idx = 0; idx < 100; idx++) {
                     hsmOperationRSA(smartCardService, (byte[]) inputs.get(input));
                 }
                 //hsmOperationRSA(smartCardService, (byte[]) inputs.get(input));
@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
             //Log.i(TAG, "[*] Starting with AES tests...");
             for(int input = 0; input < inputs.size(); input++) {
                 //Log.i(TAG, "[**] Starting with " + 16*Math.pow(2, input) +  " bytes input...");
-                for(int idx = 0; idx < 10; idx++) {
+                for(int idx = 0; idx < 100; idx++) {
                     hsmOperationAES(smartCardService, (byte[]) inputs.get(input));
                 }
                 //hsmOperationAES(smartCardService, (byte[]) inputs.get(input));
@@ -164,7 +164,7 @@ public class MainActivity extends AppCompatActivity {
             //Log.i(TAG, "[*] Starting with RSA tests...");
             for(int input = 0; input < inputs.size(); input++) {
                 //Log.i(TAG, "[**] Starting with " + 16*Math.pow(2, input) +  " bytes input...");
-                for(int idx = 0; idx < 10; idx++) {
+                for(int idx = 0; idx < 100; idx++) {
                     keyStoreOperationRSA(keyEntryRSA, (byte[]) inputs.get(input));
                 }
                 //keyStoreOperationRSA(keyEntryRSA, (byte[]) inputs.get(input));
@@ -173,7 +173,7 @@ public class MainActivity extends AppCompatActivity {
             //Log.i(TAG, "[*] Starting with RSA tests...");
             for(int input = 0; input < inputs.size(); input++) {
                 //Log.i(TAG, "[**] Starting with " + 16*Math.pow(2, input) +  " bytes input...");
-                for(int idx = 0; idx < 10; idx++) {
+                for(int idx = 0; idx < 100; idx++) {
                     keyStoreOperationAES(keyEntryAES, (byte[]) inputs.get(input));
                 }
                 //keyStoreOperationAES(keyEntryAES, (byte[]) inputs.get(input));
