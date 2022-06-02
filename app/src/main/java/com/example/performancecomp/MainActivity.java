@@ -78,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         /* Add different inputs to inputs list */
-        inputs.add(input16);
+        inputs.add(input32);
         /* Import AES and RSA key to Android KeyStores */
         importAndroidKeyStoreKeys();
         startCollecting();
@@ -116,14 +116,15 @@ public class MainActivity extends AppCompatActivity {
         try {
             SmartCardHSMCardService smartCardService = getSmartCardHSMCardService();
             smartCardService.verifyPassword(null, 0, "123456".getBytes());
+            SmartCardHSMRSAKey rsa2048Key = new SmartCardHSMRSAKey((byte) 0x3, "RSA-v1-5-SHA-256", (short) 2048);
 
             Debug.startMethodTracing("smartCardHSM.trace");
             /* Test RSA */
             //Log.i(TAG, "[*] Starting with RSA tests...");
             for(int input = 0; input < inputs.size(); input++) {
                 //Log.i(TAG, "[**] Starting with " + 16*Math.pow(2, input) +  " bytes input...");
-                for(int idx = 0; idx < 100; idx++) {
-                    hsmOperationRSA(smartCardService, (byte[]) inputs.get(input));
+                for(int idx = 0; idx < 10; idx++) {
+                    hsmOperationRSA(smartCardService, rsa2048Key, (byte[]) inputs.get(input));
                 }
                 //hsmOperationRSA(smartCardService, (byte[]) inputs.get(input));
             }
@@ -131,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
             //Log.i(TAG, "[*] Starting with AES tests...");
             for(int input = 0; input < inputs.size(); input++) {
                 //Log.i(TAG, "[**] Starting with " + 16*Math.pow(2, input) +  " bytes input...");
-                for(int idx = 0; idx < 100; idx++) {
+                for(int idx = 0; idx < 10; idx++) {
                     hsmOperationAES(smartCardService, (byte[]) inputs.get(input));
                 }
                 //hsmOperationAES(smartCardService, (byte[]) inputs.get(input));
@@ -158,14 +159,17 @@ public class MainActivity extends AppCompatActivity {
             keyStore.load(null);
             KeyStore.Entry keyEntryRSA = keyStore.getEntry("rsa_key", null);
             KeyStore.Entry keyEntryAES = keyStore.getEntry("aes_key", null);
+            Signature sig = Signature.getInstance("SHA256WithRSA");
+            sig.initSign(((KeyStore.PrivateKeyEntry) keyEntryRSA).getPrivateKey());
+            Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
 
             Debug.startMethodTracing("keyStore.trace");
             /* Test RSA */
             //Log.i(TAG, "[*] Starting with RSA tests...");
             for(int input = 0; input < inputs.size(); input++) {
                 //Log.i(TAG, "[**] Starting with " + 16*Math.pow(2, input) +  " bytes input...");
-                for(int idx = 0; idx < 100; idx++) {
-                    keyStoreOperationRSA(keyEntryRSA, (byte[]) inputs.get(input));
+                for(int idx = 0; idx < 10; idx++) {
+                    keyStoreOperationRSA(sig, (byte[]) inputs.get(input));
                 }
                 //keyStoreOperationRSA(keyEntryRSA, (byte[]) inputs.get(input));
             }
@@ -173,8 +177,8 @@ public class MainActivity extends AppCompatActivity {
             //Log.i(TAG, "[*] Starting with RSA tests...");
             for(int input = 0; input < inputs.size(); input++) {
                 //Log.i(TAG, "[**] Starting with " + 16*Math.pow(2, input) +  " bytes input...");
-                for(int idx = 0; idx < 100; idx++) {
-                    keyStoreOperationAES(keyEntryAES, (byte[]) inputs.get(input));
+                for(int idx = 0; idx < 10; idx++) {
+                    keyStoreOperationAES(keyEntryAES, cipher, (byte[]) inputs.get(input));
                 }
                 //keyStoreOperationAES(keyEntryAES, (byte[]) inputs.get(input));
             }
@@ -187,19 +191,24 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Function to perform the RSA operation.
      */
-    private void keyStoreOperationRSA(final KeyStore.Entry keyEntry, final byte[] input) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-        Signature sig = Signature.getInstance("SHA256WithRSA");
-        sig.initSign(((KeyStore.PrivateKeyEntry) keyEntry).getPrivateKey());
+    private void keyStoreOperationRSA(Signature sig, byte[] input) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         sig.update(input);
         sig.sign();
     }
     /**
      * Function to perform
      */
-    private void keyStoreOperationAES(final KeyStore.Entry keyEntry, final byte[] input) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+    private void keyStoreOperationAES(final KeyStore.Entry keyEntry, Cipher cipher, final byte[] input) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         cipher.init(Cipher.ENCRYPT_MODE, ((KeyStore.SecretKeyEntry) keyEntry).getSecretKey());
         cipher.doFinal(input);
+    }
+
+    public String bytesToKey(final byte[] bytes) {
+        final StringBuilder strSig = new StringBuilder();
+        for (final byte aByte : bytes) {
+            strSig.append(String.format("%02x", aByte));
+        }
+        return strSig.toString();
     }
 
     /**
@@ -297,8 +306,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Function to perform RSA signature on input.
      */
-    private void hsmOperationRSA(SmartCardHSMCardService smartCardService, byte[] input) throws CardServiceException, CardTerminalException {
-        SmartCardHSMRSAKey rsa2048Key = new SmartCardHSMRSAKey((byte) 0x3, "RSA-v1-5-SHA-256", (short) 2048);
+    private void hsmOperationRSA(SmartCardHSMCardService smartCardService, SmartCardHSMRSAKey rsa2048Key, byte[] input) throws CardServiceException, CardTerminalException {
         smartCardService.signHash(rsa2048Key, "SHA256withRSA", "PKCS1_V15", input);
     }
 
