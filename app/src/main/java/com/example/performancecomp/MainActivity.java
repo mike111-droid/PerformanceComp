@@ -162,6 +162,7 @@ public class MainActivity extends AppCompatActivity {
             Signature sig = Signature.getInstance("SHA256WithRSA");
             sig.initSign(((KeyStore.PrivateKeyEntry) keyEntryRSA).getPrivateKey());
             Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, ((KeyStore.SecretKeyEntry) keyEntryAES).getSecretKey());
 
             Debug.startMethodTracing("keyStore.trace");
             /* Test RSA */
@@ -178,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
             for(int input = 0; input < inputs.size(); input++) {
                 //Log.i(TAG, "[**] Starting with " + 16*Math.pow(2, input) +  " bytes input...");
                 for(int idx = 0; idx < 10; idx++) {
-                    keyStoreOperationAES(keyEntryAES, cipher, (byte[]) inputs.get(input));
+                    keyStoreOperationAES(cipher, (byte[]) inputs.get(input));
                 }
                 //keyStoreOperationAES(keyEntryAES, (byte[]) inputs.get(input));
             }
@@ -198,8 +199,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Function to perform
      */
-    private void keyStoreOperationAES(final KeyStore.Entry keyEntry, Cipher cipher, final byte[] input) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        cipher.init(Cipher.ENCRYPT_MODE, ((KeyStore.SecretKeyEntry) keyEntry).getSecretKey());
+    private void keyStoreOperationAES(Cipher cipher, byte[] input) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         cipher.doFinal(input);
     }
 
